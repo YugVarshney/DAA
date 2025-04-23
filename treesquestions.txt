@@ -1,0 +1,176 @@
+//Find the node with the minimum value in a Binary Search Tree
+
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* left, * right;
+    Node(int val) : data(val), left(nullptr), right(nullptr) {}
+};
+
+Node* insert(Node* root, int val) {
+    if (!root) return new Node(val);
+    if (val < root->data)
+        root->left = insert(root->left, val);
+    else
+        root->right = insert(root->right, val);
+    return root;
+}
+
+Node* findMin(Node* root) {
+    while (root && root->left) {
+        root = root->left;
+    }
+    return root;
+}
+
+int main() {
+    Node* root = nullptr;
+    root = insert(root, 50);
+    root = insert(root, 30);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 70);
+    root = insert(root, 60);
+    root = insert(root, 80);
+
+    Node* minNode = findMin(root);
+    if (minNode) {
+        cout << "Minimum value in BST: " << minNode->data << endl;
+    }
+    return 0;
+}
+
+
+
+//Find the maximum depth or height of a binary tree
+
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* left, * right;
+    Node(int val) : data(val), left(nullptr), right(nullptr) {}
+};
+
+Node* insert(Node* root, int val) {
+    if (!root) return new Node(val);
+    if (val < root->data)
+        root->left = insert(root->left, val);
+    else
+        root->right = insert(root->right, val);
+    return root;
+}
+
+int maxDepth(Node* root) {
+    if (root == nullptr) return 0;
+    int leftDepth = maxDepth(root->left);
+    int rightDepth = maxDepth(root->right);
+    return max(leftDepth, rightDepth) + 1;
+}
+
+int main() {
+    Node* root = nullptr;
+    root = insert(root, 50);
+    root = insert(root, 30);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 70);
+    root = insert(root, 60);
+    root = insert(root, 80);
+
+    cout << "Maximum depth of the tree: " << maxDepth(root) << endl;
+    return 0;
+}
+
+
+//Print nodes at k distance from the root
+
+
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* left, * right;
+    Node(int val) : data(val), left(nullptr), right(nullptr) {}
+};
+
+Node* insert(Node* root, int val) {
+    if (!root) return new Node(val);
+    if (val < root->data)
+        root->left = insert(root->left, val);
+    else
+        root->right = insert(root->right, val);
+    return root;
+}
+
+void printKDistanceNodes(Node* root, int k) {
+    if (root == nullptr) return;
+    if (k == 0) {
+        cout << root->data << " ";
+        return;
+    }
+    printKDistanceNodes(root->left, k - 1);
+    printKDistanceNodes(root->right, k - 1);
+}
+
+int main() {
+    Node* root = nullptr;
+    root = insert(root, 50);
+    root = insert(root, 30);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 70);
+    root = insert(root, 60);
+    root = insert(root, 80);
+
+    int k = 2;
+    cout << "Nodes at distance " << k << " from root: ";
+    printKDistanceNodes(root, k);
+    cout << endl;
+    return 0;
+}
+
+
+//Program to count leaf nodes in a binary tree
+
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* left, * right;
+    Node(int val) : data(val), left(nullptr), right(nullptr) {}
+};
+
+Node* insert(Node* root, int val) {
+    if (!root) return new Node(val);
+    if (val < root->data)
+        root->left = insert(root->left, val);
+    else
+        root->right = insert(root->right, val);
+    return root;
+}
+
+int countLeafNodes(Node* root) {
+    if (root == nullptr) return 0;
+    if (root->left == nullptr && root->right == nullptr) return 1;
+    return countLeafNodes(root->left) + countLeafNodes(root->right);
+}
+
+int main() {
+    Node* root = nullptr;
+    root = insert(root, 50);
+    root = insert(root, 30);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 70);
+    root = insert(root, 60);
+    root = insert(root, 80);
+
+    cout << "Number of leaf nodes: " << countLeafNodes(root) << endl;
+    return 0;
+}

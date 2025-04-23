@@ -1,0 +1,116 @@
+//main.cpp
+
+#include "boruvka.h"
+
+int main() {
+    int n, m;
+    cin >> n >> m; // n = number of vertices, m = number of edges
+
+    vector<vector<pair<int, int>>> adj(n); // adjacency list representation
+    for (int i = 0; i < m; i++) {
+        int u, v, w;
+        cin >> u >> v >> w;
+        adj[u].push_back({v, w});
+        adj[v].push_back({u, w});
+    }
+
+    cout << "Minimum Spanning Tree Weight: " << boruvkaMST(adj, n) << endl;
+    return 0;
+}
+
+
+//boruvka.h
+
+#ifndef BORUVKA_H
+#define BORUVKA_H
+
+#include <iostream>
+#include <vector>
+#include <climits>
+using namespace std;
+
+// Boruvka's algorithm function to compute MST
+int boruvkaMST(vector<vector<pair<int, int>>>& adj, int n);
+
+#endif
+
+
+//boruvka.cpp
+
+#include "boruvka.h"
+
+int boruvkaMST(vector<vector<pair<int, int>>>& adj, int n) {
+    vector<int> parent(n), rank(n, 0); // parent and rank arrays for union-find
+    vector<int> cheapest(n, -1); // array to store the cheapest edge for each component
+
+    // Initially, each vertex is its own parent (disjoint sets)
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    int numComponents = n; // Initially, there are n components (one for each vertex)
+    int mstWeight = 0; // To store the total weight of MST
+
+    // Keep running until all vertices are in one component
+    while (numComponents > 1) {
+        fill(cheapest.begin(), cheapest.end(), -1); // Reset the cheapest edges for each component
+
+        // Find the cheapest edge for each component
+        for (int u = 0; u < n; u++) {
+            // Traverse all adjacent vertices
+            for (auto &[v, weight] : adj[u]) {
+                int set1 = find(parent, u);
+                int set2 = find(parent, v);
+                
+                // If u and v are in different components, check if the edge is the cheapest
+                if (set1 != set2) {
+                    if (cheapest[set1] == -1 || cheapest[set1] > weight) {
+                        cheapest[set1] = v;
+                    }
+                    if (cheapest[set2] == -1 || cheapest[set2] > weight) {
+                        cheapest[set2] = u;
+                    }
+                }
+            }
+        }
+
+        // Add the cheapest edge to the MST
+        for (int u = 0; u < n; u++) {
+            if (cheapest[u] != -1) {
+                int v = cheapest[u];
+                int set1 = find(parent, u);
+                int set2 = find(parent, v);
+
+                if (set1 != set2) {
+                    mstWeight += adj[u][v].second;
+                    unionSets(parent, rank, set1, set2);
+                    numComponents--;
+                }
+            }
+        }
+    }
+
+    return mstWeight;
+}
+
+// Find the root of the set containing x
+int find(vector<int>& parent, int x) {
+    if (parent[x] == x) return x;
+    return parent[x] = find(parent, parent[x]);
+}
+
+// Union by rank of two sets
+void unionSets(vector<int>& parent, vector<int>& rank, int x, int y) {
+    int rootX = find(parent, x);
+    int rootY = find(parent, y);
+
+    if (rootX != rootY) {
+        // Union by rank
+        if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else {
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
+    }
+}

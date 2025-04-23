@@ -1,0 +1,68 @@
+//main.cpp
+
+#include "mcolor.h"
+
+int main() {
+    int n, m;
+    cin >> n >> m; // n = number of vertices, m = number of colors
+
+    // Input adjacency matrix
+    vector<vector<int>> graph(n, vector<int>(n));
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            cin >> graph[i][j];
+
+    // Call the coloring function
+    bool res = graphColoring(graph, m, n);
+    cout << (res ? "Yes" : "No") << endl; // Output result
+    return 0;
+}
+
+
+//mcolor.h
+
+#ifndef MCOLOR_H
+#define MCOLOR_H
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// Function to check if m-coloring is possible
+bool graphColoring(vector<vector<int>> &graph, int m, int n);
+
+#endif
+
+
+//mcolor.cpp
+
+#include "mcolor.h"
+
+// Function to check if it is safe to assign color c to node
+bool isSafe(int node, vector<vector<int>> &graph, vector<int> &color, int c, int n) {
+    for (int i = 0; i < n; i++) {
+        if (graph[node][i] && color[i] == c) // adjacent node has same color
+            return false;
+    }
+    return true;
+}
+
+// Recursive utility to try coloring nodes
+bool solve(int node, vector<vector<int>> &graph, int m, int n, vector<int> &color) {
+    if (node == n) return true; // All nodes colored
+
+    for (int c = 1; c <= m; c++) {
+        if (isSafe(node, graph, color, c, n)) {
+            color[node] = c; // Assign color
+            if (solve(node + 1, graph, m, n, color)) return true;
+            color[node] = 0; // Backtrack
+        }
+    }
+    return false;
+}
+
+// Main function that initiates coloring
+bool graphColoring(vector<vector<int>> &graph, int m, int n) {
+    vector<int> color(n, 0); // Color array for all nodes
+    return solve(0, graph, m, n, color);
+}

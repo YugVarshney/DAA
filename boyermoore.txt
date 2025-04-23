@@ -1,0 +1,69 @@
+//main.cpp
+
+#include "boyer.h"
+
+int main() {
+    string txt, pat;
+    cin >> txt >> pat; // Input text and pattern
+
+    vector<int> res = boyerMoore(txt, pat);
+    for (int idx : res) cout << idx << " ";
+    cout << endl;
+    return 0;
+}
+
+
+//boyer.h
+
+
+#ifndef BOYER_H
+#define BOYER_H
+
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+// Boyer-Moore algorithm function
+vector<int> boyerMoore(string &txt, string &pat);
+
+#endif
+
+
+//boyer.cpp
+
+#include "boyer.h"
+#define NO_OF_CHARS 256
+
+// Preprocess pattern to create bad character heuristic table
+void badCharHeuristic(string &pat, vector<int> &badChar) {
+    for (int i = 0; i < NO_OF_CHARS; i++) badChar[i] = -1;
+    for (int i = 0; i < pat.size(); i++) badChar[pat[i]] = i;
+}
+
+// Boyer-Moore using only bad character heuristic
+vector<int> boyerMoore(string &txt, string &pat) {
+    vector<int> res;
+    int n = txt.size(), m = pat.size();
+    vector<int> badChar(NO_OF_CHARS);
+
+    badCharHeuristic(pat, badChar);
+
+    int s = 0;
+    while (s <= n - m) {
+        int j = m - 1;
+
+        while (j >= 0 && pat[j] == txt[s + j]) j--;
+
+        if (j < 0) {
+            res.push_back(s); // Match found
+            s += (s + m < n) ? m - badChar[txt[s + m]] : 1;
+        } else {
+            s += max(1, j - badChar[txt[s + j]]);
+        }
+    }
+
+    return res;
+}
+
+

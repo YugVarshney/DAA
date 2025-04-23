@@ -1,0 +1,71 @@
+//main.cpp
+
+#include "prim.h"
+
+int main() {
+    int n, m;
+    cin >> n >> m; // n = number of vertices, m = number of edges
+
+    vector<vector<pair<int, int>>> adj(n); // adjacency list representation
+    for (int i = 0; i < m; i++) {
+        int u, v, w;
+        cin >> u >> v >> w;
+        adj[u].push_back({v, w});
+        adj[v].push_back({u, w});
+    }
+
+    cout << "Minimum Spanning Tree Weight: " << primMST(adj, n) << endl;
+    return 0;
+}
+
+
+//prim.h
+
+#ifndef PRIM_H
+#define PRIM_H
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
+using namespace std;
+
+// Prim's algorithm function to compute MST
+int primMST(vector<vector<pair<int, int>>>& adj, int n);
+
+#endif
+
+
+//prim.cpp
+
+#include "prim.h"
+
+// Prim's algorithm to find MST weight
+int primMST(vector<vector<pair<int, int>>>& adj, int n) {
+    vector<int> key(n, INT_MAX); // to store the minimum weight edge for each vertex
+    vector<bool> inMST(n, false); // to check if vertex is included in MST
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq; // min-heap to store (weight, vertex)
+
+    key[0] = 0; // start with the first vertex
+    pq.push({0, 0}); // push the first vertex with 0 weight into the priority queue
+    int mstWeight = 0;
+
+    while (!pq.empty()) {
+        int u = pq.top().second; // Get the vertex with the minimum key value
+        pq.pop();
+        
+        if (inMST[u]) continue; // Skip if vertex is already included in MST
+        inMST[u] = true; // Mark vertex as included in MST
+        mstWeight += key[u]; // Add the edge weight to MST total weight
+        
+        // Update key values of adjacent vertices
+        for (auto &[v, weight] : adj[u]) {
+            if (!inMST[v] && weight < key[v]) {
+                key[v] = weight;
+                pq.push({key[v], v});
+            }
+        }
+    }
+    return mstWeight; // return the total weight of the MST
+}
+

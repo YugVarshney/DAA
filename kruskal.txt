@@ -1,0 +1,94 @@
+//main.cpp
+
+#include "kruskal.h"
+
+int main() {
+    int n, m;
+    cin >> n >> m; // n = number of vertices, m = number of edges
+
+    vector<Edge> edges; // Store edges (u, v, weight)
+    for (int i = 0; i < m; i++) {
+        int u, v, w;
+        cin >> u >> v >> w;
+        edges.push_back({u, v, w});
+    }
+
+    cout << "Minimum Spanning Tree Weight: " << kruskalMST(n, edges) << endl;
+    return 0;
+}
+
+
+//Kruskal.h
+
+#ifndef KRUSKAL_H
+#define KRUSKAL_H
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+// Define a structure to represent an edge
+struct Edge {
+    int u, v, weight;
+};
+
+// Kruskal's algorithm function to compute MST
+int kruskalMST(int n, vector<Edge>& edges);
+
+#endif
+
+
+//kruskal.cpp
+
+#include "kruskal.h"
+
+// Find function to determine the root of a node (for Union-Find)
+int findParent(vector<int>& parent, int x) {
+    if (parent[x] == x) return x;
+    return parent[x] = findParent(parent, parent[x]); // Path compression
+}
+
+// Union function to merge two sets (for Union-Find)
+void unionSets(vector<int>& parent, vector<int>& rank, int x, int y) {
+    int rootX = findParent(parent, x);
+    int rootY = findParent(parent, y);
+
+    if (rootX != rootY) {
+        // Union by rank
+        if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else {
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
+    }
+}
+
+// Kruskal's algorithm to find the Minimum Spanning Tree weight
+int kruskalMST(int n, vector<Edge>& edges) {
+    // Sort the edges by weight
+    sort(edges.begin(), edges.end(), [](Edge& a, Edge& b) {
+        return a.weight < b.weight;
+    });
+
+    vector<int> parent(n), rank(n, 0);
+    // Initially, each vertex is its own parent (disjoint sets)
+    for (int i = 0; i < n; i++) {
+        parent[i] = i;
+    }
+
+    int mstWeight = 0;
+    for (auto& edge : edges) {
+        int u = edge.u, v = edge.v, w = edge.weight;
+        // If u and v are in different sets, include this edge in the MST
+        if (findParent(parent, u) != findParent(parent, v)) {
+            mstWeight += w;
+            unionSets(parent, rank, u, v); // Union the sets
+        }
+    }
+
+    return mstWeight; // Return the total weight of the MST
+}

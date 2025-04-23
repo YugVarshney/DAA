@@ -1,0 +1,196 @@
+//main.cpp
+
+#include <iostream>
+#include <vector>
+#include <ctime>
+#include <fstream>
+#include "brute_force.h"
+#include "dp_lcs.h"
+
+using namespace std;
+
+int main() {
+    // Example sequences
+    string X = "ABCBDAB";
+    string Y = "BDCAB";
+
+    // Timing brute force approach
+    clock_t start = clock();
+    bruteForceLCS(X, Y);
+    clock_t end = clock();
+    double execTimeBruteForce = double(end - start) / CLOCKS_PER_SEC;
+    cout << "Execution Time (Brute Force): " << execTimeBruteForce << " seconds" << endl;
+
+    // Timing dynamic programming approach
+    start = clock();
+    dpLCS(X, Y);
+    end = clock();
+    double execTimeDP = double(end - start) / CLOCKS_PER_SEC;
+    cout << "Execution Time (DP): " << execTimeDP << " seconds" << endl;
+
+    // Save execution times to file for plotting
+    ofstream file("execution_times.csv");
+    file << "Method,Time\n";
+    file << "BruteForce," << execTimeBruteForce << "\n";
+    file << "DP," << execTimeDP << "\n";
+    file.close();
+
+    return 0;
+}
+
+
+//brute_force.h
+
+
+#ifndef BRUTE_FORCE_H
+#define BRUTE_FORCE_H
+
+#include <string>
+
+// Function to compute the longest common subsequence using brute force
+void bruteForceLCS(const std::string& X, const std::string& Y);
+
+#endif
+
+
+//brute_force.cpp
+
+
+#include "brute_force.h"
+#include <iostream>
+#include <vector>
+#include <string>
+
+// Function to find all subsequences of a string X
+void generateSubsequences(const std::string& X, std::vector<std::string>& subsequences) {
+    int n = X.size();
+    for (int i = 0; i < (1 << n); i++) {
+        std::string subseq = "";
+        for (int j = 0; j < n; j++) {
+            if (i & (1 << j)) {
+                subseq += X[j];
+            }
+        }
+        subsequences.push_back(subseq);
+    }
+}
+
+// Function to check if a subsequence is present in Y
+bool isSubsequence(const std::string& subseq, const std::string& Y) {
+    int m = subseq.size(), n = Y.size();
+    int i = 0, j = 0;
+    while (i < m && j < n) {
+        if (subseq[i] == Y[j]) {
+            i++;
+        }
+        j++;
+    }
+    return i == m;
+}
+
+// Brute force method to find the LCS
+void bruteForceLCS(const std::string& X, const std::string& Y) {
+    std::vector<std::string> subsequences;
+    generateSubsequences(X, subsequences);
+
+    std::string longestCommonSubseq = "";
+    for (const auto& subseq : subsequences) {
+        if (isSubsequence(subseq, Y) && subseq.size() > longestCommonSubseq.size()) {
+            longestCommonSubseq = subseq;
+        }
+    }
+
+    std::cout << "Longest Common Subsequence (Brute Force): " << longestCommonSubseq << std::endl;
+    std::cout << "Length: " << longestCommonSubseq.size() << std::endl;
+}
+
+
+//dp_lcs.h
+
+
+#ifndef DP_LCS_H
+#define DP_LCS_H
+
+#include <string>
+
+// Function to compute the longest common subsequence using dynamic programming
+void dpLCS(const std::string& X, const std::string& Y);
+
+#endif
+
+
+//dp_lcs.cpp
+
+
+#include "dp_lcs.h"
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// DP method to find the longest common subsequence
+void dpLCS(const string& X, const string& Y) {
+    int m = X.size(), n = Y.size();
+    vector<vector<int>> C(m + 1, vector<int>(n + 1, 0));
+    vector<vector<int>> B(m + 1, vector<int>(n + 1, 0));  // 0: up, 1: left, 2: diagonal
+
+    // Fill the DP table
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (X[i - 1] == Y[j - 1]) {
+                C[i][j] = C[i - 1][j - 1] + 1;
+                B[i][j] = 2;  // diagonal
+            } else {
+                if (C[i - 1][j] >= C[i][j - 1]) {
+                    C[i][j] = C[i - 1][j];
+                    B[i][j] = 0;  // up
+                } else {
+                    C[i][j] = C[i][j - 1];
+                    B[i][j] = 1;  // left
+                }
+            }
+        }
+    }
+
+    // Reconstruct the LCS from the B table
+    string lcs = "";
+    int i = m, j = n;
+    while (i > 0 && j > 0) {
+        if (B[i][j] == 2) {
+            lcs = X[i - 1] + lcs;
+            i--;
+            j--;
+        } else if (B[i][j] == 0) {
+            i--;
+        } else {
+            j--;
+        }
+    }
+
+    cout << "Longest Common Subsequence (DP): " << lcs << endl;
+    cout << "Length: " << lcs.size() << endl;
+
+    // Display the C and B tables
+    cout << "C table (LCS Lengths):" << endl;
+    for (int i = 0; i <= m; i++) {
+        for (int j = 0; j <= n; j++) {
+            cout << C[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    cout << "B table (Backtracking information):" << endl;
+    for (int i = 0; i <= m; i++) {
+        for (int j = 0; j <= n; j++) {
+            cout << B[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+
+/*g++ -pg -o lcs main.cpp brute_force.cpp dp_lcs.cpp
+./lcs
+gprof lcs gmon.out > analysis.txt
+*/

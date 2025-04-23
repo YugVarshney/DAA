@@ -1,0 +1,328 @@
+// Base.h
+#ifndef BASE_H
+#define BASE_H
+
+#include <stdio.h>
+#define MAX_BASE 36  // Maximum possible base (0-9, A-Z)
+
+typedef struct {
+    char symbols[MAX_BASE];
+    int maxD;
+} Base;
+
+#endif
+
+// BaseOps.h
+#ifndef BASEOPS_H
+#define BASEOPS_H
+
+#include <stdio.h>
+#include "Base.h"
+
+extern Base baseSystem;  // Global base system
+int initializeBase(FILE *basefile);
+int lookup(char c);
+
+#endif
+
+// Number.h
+#ifndef NUMBER_H
+#define NUMBER_H
+
+typedef struct Node {
+    char digit;
+    struct Node* next;
+} Node;
+
+typedef struct {
+    int base;
+    Node* digits;
+    int length;
+} Number;
+
+#endif
+
+// NumberOps.h
+#ifndef NUMBEROPS_H
+#define NUMBEROPS_H
+
+#include "Number.h"
+
+Number createNumber(char *number_format);
+Number add(Number a, Number b);
+Number subtract(Number a, Number b);
+void printNumber(Number n);
+void freeNumber(Number n);
+
+#endif
+
+// BaseOps.c
+#include <ctype.h>
+#include <string.h>
+#include "BaseOps.h"
+
+Base baseSystem;
+
+int initializeBase(FILE *basefile) {
+    char line[1024];
+    char *token;
+    int count = 0;
+    
+    if (fgets(line, sizeof(line), basefile)) {
+        token = strtok(line, " \n");
+        while (token != NULL && count < MAX_BASE) {
+            baseSystem.symbols[count++] = token[0];
+            token = strtok(NULL, " \n");
+        }
+    }
+    
+    baseSystem.maxD = count;
+    return count;
+}
+
+int lookup(char c) {
+    for (int i = 0; i < baseSystem.maxD; i++) {
+        if (baseSystem.symbols[i] == c) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// NumberOps.c
+#include <stdlib.h>
+#include <string.h>
+#include "NumberOps.h"
+#include "BaseOps.h"
+
+static Number convert(Number n, int to_base);
+
+Node* createNode(char digit) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->digit = digit;
+    newNode->next = NULL;
+    return newNode;
+}
+
+Number createNumber(char *number_format) {
+    Number num = {0, NULL, 0};
+    char *base_str = strtok(number_format, " ");
+    char *digits = strtok(NULL, " \n");
+    
+    if (base_str && digits) {
+        num.base = atoi(base_str);
+        num.length = strlen(digits);
+        
+        for (int i = 0; digits[i]; i++) {
+            Node* newNode = createNode(digits[i]);
+            newNode->next = num.digits;
+            num.digits = newNode;
+        }
+    }
+    
+    return num;
+}
+
+static int toDecimal(Number n) {
+    int decimal = 0;
+    int power = 1;
+    Node* current = n.digits;
+    
+    while (current != NULL) {
+        decimal += lookup(current->digit) * power;
+        power *= n.base;
+        current = current->next;
+    }
+    
+    return decimal;
+}
+
+static Number fromDecimal(int decimal, int base) {
+    Number result = {base, NULL, 0};
+    
+    if (decimal == 0) {
+        result.digits = createNode(baseSystem.symbols[0]);
+        result.length = 1;
+        return result;
+    }
+    
+    while (decimal > 0) {
+        int remainder = decimal % base;
+        Node* newNode = createNode(baseSystem.symbols[remainder]);
+        newNode->next = result.digits;
+        result.digits = newNode;
+        result.length++;
+        decimal /= base;
+    }
+    
+    return result;
+}
+
+static Number convert(Number n, int to_base) {
+    int decimal = toDecimal(n);
+    return fromDecimal(decimal, to_base);
+}
+
+Number add(Number a, Number b) {
+    int base = (a.base > b.base) ? a.base : b.base;
+    
+    if (a.base != base) {
+        a = convert(a, base);
+    }
+    if (b.base != base) {
+        b = convert(b, base);
+    }
+    
+    int sum = toDecimal(a) + toDecimal(b);
+    return fromDecimal(sum, base);
+}
+
+Number subtract(Number a, Number b) {
+    int base = (a.base > b.base) ? a.base : b.base;
+    
+    if (a.base != base) {
+        a = convert(a, base);
+    }
+    if (b.base != base) {
+        b = convert(b, base);
+    }
+    
+    int difference = toDecimal(a) - toDecimal(b);
+    return fromDecimal(difference > 0 ? difference : 0, base);
+}
+
+void printNumber(Number n) {
+    Node* current = n.digits;
+    while (current != NULL) {
+        printf("%c", current->digit);
+        current = current->next;
+    }
+}
+
+void freeNumber(Number n) {
+    Node* current = n.digits;
+    while (current != NULL) {
+        Node* temp = current;
+        current = current->next;
+        free(temp);
+    }
+}
+
+// SmartCalci.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "BaseOps.h"
+#include "NumberOps.h"
+
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <base_file> <instruction_file>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *basefile = fopen(argv[1], "r");
+    if (!basefile) {
+        fprintf(stderr, "Error opening base file\n");
+        return 1;
+    }
+
+    FILE *instructionfile = fopen(argv[2], "r");
+    if (!instructionfile) {
+        fprintf(stderr, "Error opening instruction file\n");
+        fclose(basefile);
+        return 1;
+    }
+
+    FILE *outputfile = fopen("output.txt", "w");
+    if (!outputfile) {
+        fprintf(stderr, "Error creating output file\n");
+        fclose(basefile);
+        fclose(instructionfile);
+        return 1;
+    }
+
+    initializeBase(basefile);
+    fclose(basefile);
+
+    char operation[20], num1_str[100], num2_str[100];
+    while (fgets(operation, sizeof(operation), instructionfile)) {
+        operation[strcspn(operation, "\n")] = 0;
+        
+        if (!fgets(num1_str, sizeof(num1_str), instructionfile) ||
+            !fgets(num2_str, sizeof(num2_str), instructionfile)) {
+            break;
+        }
+        
+        num1_str[strcspn(num1_str, "\n")] = 0;
+        num2_str[strcspn(num2_str, "\n")] = 0;
+
+        Number num1 = createNumber(num1_str);
+        Number num2 = createNumber(num2_str);
+        Number result;
+
+        fprintf(outputfile, "%s(", strrchr(num1_str, ' ') + 1);
+        fprintf(outputfile, "%d) %s ", num1.base, 
+                strcmp(operation, "add") == 0 ? "+" : "-");
+        fprintf(outputfile, "%s(", strrchr(num2_str, ' ') + 1);
+        fprintf(outputfile, "%d) = ", num2.base);
+
+        if (strcmp(operation, "add") == 0) {
+            result = add(num1, num2);
+        } else {
+            result = subtract(num1, num2);
+        }
+
+        Node* current = result.digits;
+        while (current != NULL) {
+            fputc(current->digit, outputfile);
+            current = current->next;
+        }
+        fprintf(outputfile, "(%d)\n", result.base);
+
+        freeNumber(num1);
+        freeNumber(num2);
+        freeNumber(result);
+    }
+
+    fclose(instructionfile);
+    fclose(outputfile);
+    return 0;
+}
+
+//file1.txt
+0 1 2 3 4 5 6 7 8 9 a b c d e A B C D E
+
+//file2.txt
+add
+6 121
+10 23
+subtract
+4 103
+3 12
+
+//Makefile
+CC=gcc
+CFLAGS=-Wall -Wextra
+
+SRCS=SmartCalci.c BaseOps.c NumberOps.c
+OBJS=$(SRCS:.c=.o)
+TARGET=mycalc
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(TARGET) output.txt
+	
+
+//terminal
+make clean
+make
+./mycalc file1.txt file2.txt
+cat output.txt

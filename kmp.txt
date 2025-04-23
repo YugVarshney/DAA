@@ -1,0 +1,70 @@
+//main.cpp
+
+#include "kmp.h"
+
+int main() {
+    string txt, pat;
+    cin >> txt >> pat; // Input text and pattern
+
+    vector<int> res = KMPSearch(txt, pat);
+    for (int idx : res) cout << idx << " ";
+    cout << endl;
+    return 0;
+}
+
+//kmp.h
+
+#ifndef KMP_H
+#define KMP_H
+
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+// KMP algorithm function
+vector<int> KMPSearch(string &txt, string &pat);
+
+#endif
+
+
+//kmp.cpp
+
+#include "kmp.h"
+
+// Build prefix table (LPS - Longest Prefix Suffix)
+vector<int> buildLPS(string &pat) {
+    int m = pat.size();
+    vector<int> lps(m);
+    int len = 0;
+    lps[0] = 0;
+
+    for (int i = 1; i < m; i++) {
+        while (len > 0 && pat[i] != pat[len]) len = lps[len - 1];
+        if (pat[i] == pat[len]) len++;
+        lps[i] = len;
+    }
+    return lps;
+}
+
+// KMP search using LPS array
+vector<int> KMPSearch(string &txt, string &pat) {
+    vector<int> res;
+    vector<int> lps = buildLPS(pat);
+    int n = txt.size(), m = pat.size();
+    int i = 0, j = 0;
+
+    while (i < n) {
+        if (txt[i] == pat[j]) {
+            i++; j++;
+        }
+        if (j == m) {
+            res.push_back(i - j); // Match found
+            j = lps[j - 1]; // Continue searching
+        } else if (i < n && txt[i] != pat[j]) {
+            if (j != 0) j = lps[j - 1];
+            else i++;
+        }
+    }
+    return res;
+}

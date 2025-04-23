@@ -1,0 +1,55 @@
+//main.cpp
+
+#include "nqueen.h"
+
+int main() {
+    int n;
+    cin >> n;
+    vector<vector<string>> res = solveNQueens(n);
+    for (auto &board : res) {
+        for (auto &row : board) cout << row << endl;
+        cout << endl;
+    }
+    return 0;
+}
+
+//nqueen.h
+
+#ifndef NQUEEN_H
+#define NQUEEN_H
+
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+vector<vector<string>> solveNQueens(int n);
+
+#endif
+
+//nqueen.cpp
+#include "nqueen.h"
+
+void solve(int col, int n, vector<string> &board, vector<vector<string>> &res, vector<int> &left, vector<int> &ld, vector<int> &ud) {
+    if (col == n) {
+        res.push_back(board);
+        return;
+    }
+    for (int row = 0; row < n; row++) {
+        if (left[row] == 0 && ld[row + col] == 0 && ud[n - 1 + col - row] == 0) {
+            board[row][col] = 'Q';
+            left[row] = ld[row + col] = ud[n - 1 + col - row] = 1;
+            solve(col + 1, n, board, res, left, ld, ud);
+            board[row][col] = '.';
+            left[row] = ld[row + col] = ud[n - 1 + col - row] = 0;
+        }
+    }
+}
+
+vector<vector<string>> solveNQueens(int n) {
+    vector<vector<string>> res;
+    vector<string> board(n, string(n, '.'));
+    vector<int> left(n, 0), ld(2 * n - 1, 0), ud(2 * n - 1, 0);
+    solve(0, n, board, res, left, ld, ud);
+    return res;
+}

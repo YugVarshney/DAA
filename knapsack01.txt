@@ -1,0 +1,51 @@
+//main.cpp
+
+#include "knapsack.h"
+
+int main() {
+    int n, W;
+    cin >> n >> W; // n = number of items, W = max weight
+
+    vector<int> wt(n), val(n);
+    for (int i = 0; i < n; i++) cin >> wt[i]; // weights
+    for (int i = 0; i < n; i++) cin >> val[i]; // values
+
+    cout << knapsack01(n, W, wt, val) << endl;
+    return 0;
+}
+
+
+//knapsack.h
+
+#ifndef KNAPSACK_H
+#define KNAPSACK_H
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// 0/1 Knapsack function
+int knapsack01(int n, int W, vector<int> &wt, vector<int> &val);
+
+#endif
+
+
+//knapsack.cpp
+
+#include "knapsack.h"
+
+// DP implementation of 0/1 Knapsack
+int knapsack01(int n, int W, vector<int> &wt, vector<int> &val) {
+    vector<vector<int>> dp(n + 1, vector<int>(W + 1, 0));
+
+    for (int i = 1; i <= n; i++) {
+        for (int w = 0; w <= W; w++) {
+            if (wt[i - 1] <= w)
+                dp[i][w] = max(dp[i - 1][w], val[i - 1] + dp[i - 1][w - wt[i - 1]]);
+            else
+                dp[i][w] = dp[i - 1][w];
+        }
+    }
+
+    return dp[n][W];
+}

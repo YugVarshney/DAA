@@ -1,0 +1,66 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+// Define a structure to represent an item
+struct Item {
+    int weight;
+    int value;
+    
+    // Constructor to initialize Item
+    Item(int w, int v) : weight(w), value(v) {}
+};
+
+// Comparator function to sort items by value/weight ratio in descending order
+bool compare(Item a, Item b) {
+    double ratioA = (double)a.value / a.weight;
+    double ratioB = (double)b.value / b.weight;
+    return ratioA > ratioB;
+}
+
+double knapsackGreedy(int capacity, vector<Item>& items) {
+    // Sort the items by value/weight ratio in descending order
+    sort(items.begin(), items.end(), compare);
+    
+    double totalValue = 0.0;  // To store the total value in the knapsack
+    int remainingCapacity = capacity;  // Remaining capacity in the knapsack
+    
+    for (auto& item : items) {
+        if (remainingCapacity == 0) break;
+        
+        if (item.weight <= remainingCapacity) {
+            // Take the whole item
+            totalValue += item.value;
+            remainingCapacity -= item.weight;
+        } else {
+            // Take the fraction of the item that fits
+            totalValue += item.value * ((double)remainingCapacity / item.weight);
+            remainingCapacity = 0;  // The knapsack is full
+        }
+    }
+    
+    return totalValue;
+}
+
+int main() {
+    int n, capacity;
+    cout << "Enter number of items: ";
+    cin >> n;
+    cout << "Enter the capacity of the knapsack: ";
+    cin >> capacity;
+
+    vector<Item> items;
+    for (int i = 0; i < n; ++i) {
+        int weight, value;
+        cout << "Enter weight and value of item " << i + 1 << ": ";
+        cin >> weight >> value;
+        items.push_back(Item(weight, value));
+    }
+
+    double maxValue = knapsackGreedy(capacity, items);
+    cout << "Maximum value in Knapsack = " << maxValue << endl;
+
+    return 0;
+}

@@ -1,0 +1,72 @@
+//main.cpp
+
+#include "rabin.h"
+
+int main() {
+    string txt, pat;
+    cin >> txt >> pat; // Input text and pattern
+
+    vector<int> res = rabinKarp(txt, pat);
+    for (int idx : res) cout << idx << " ";
+    cout << endl;
+    return 0;
+}
+
+//rabin.h
+
+#ifndef RABIN_H
+#define RABIN_H
+
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+// Rabin-Karp algorithm function
+vector<int> rabinKarp(string &txt, string &pat);
+
+#endif
+
+
+//rabin.cpp
+
+#include "rabin.h"
+
+#define d 256 // number of characters in input alphabet
+#define q 101 // a prime number for modulo
+
+// Rabin-Karp algorithm using rolling hash
+vector<int> rabinKarp(string &txt, string &pat) {
+    vector<int> res;
+    int n = txt.size(), m = pat.size();
+    if (m > n) return res;
+
+    int h = 1;
+    for (int i = 0; i < m - 1; i++) h = (h * d) % q;
+
+    int p = 0, t = 0;
+    for (int i = 0; i < m; i++) {
+        p = (d * p + pat[i]) % q;
+        t = (d * t + txt[i]) % q;
+    }
+
+    for (int i = 0; i <= n - m; i++) {
+        if (p == t) {
+            bool match = true;
+            for (int j = 0; j < m; j++) {
+                if (txt[i + j] != pat[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) res.push_back(i);
+        }
+
+        if (i < n - m) {
+            t = (d * (t - txt[i] * h) + txt[i + m]) % q;
+            if (t < 0) t += q;
+        }
+    }
+
+    return res;
+}

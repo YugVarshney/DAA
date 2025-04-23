@@ -1,0 +1,153 @@
+//main.cpp
+
+#include <iostream>
+#include <vector>
+#include <ctime>
+#include <fstream>
+#include "exhaustive.h"
+#include "dp_matrix_chain.h"
+
+using namespace std;
+
+int main() {
+    // Example matrix chain: dimensions array
+    // Matrix A1: p0 * p1, Matrix A2: p1 * p2, ..., Matrix An: pn-1 * pn
+    vector<int> matrices = {30, 35, 15, 5, 10, 20, 25};
+
+    // Timing exhaustive method
+    clock_t start = clock();
+    exhaustiveMatrixChain(matrices);
+    clock_t end = clock();
+    double execTimeExhaustive = double(end - start) / CLOCKS_PER_SEC;
+    cout << "Execution Time (Exhaustive): " << execTimeExhaustive << " seconds" << endl;
+
+    // Timing dynamic programming method
+    start = clock();
+    dpMatrixChain(matrices);
+    end = clock();
+    double execTimeDP = double(end - start) / CLOCKS_PER_SEC;
+    cout << "Execution Time (DP): " << execTimeDP << " seconds" << endl;
+
+    // Save execution times to file for plotting
+    ofstream file("execution_times.csv");
+    file << "Method,Time\n";
+    file << "Exhaustive," << execTimeExhaustive << "\n";
+    file << "DP," << execTimeDP << "\n";
+    file.close();
+
+    return 0;
+}
+
+
+//exhaustive.h
+
+
+#ifndef EXHAUSTIVE_H
+#define EXHAUSTIVE_H
+
+#include <vector>
+#include <iostream>
+
+// Function to compute the minimum scalar multiplication cost using exhaustive method
+void exhaustiveMatrixChain(const std::vector<int>& matrices);
+
+#endif
+
+
+//exhaustive.cpp
+
+
+#include "exhaustive.h"
+#include <climits>
+
+// Recursive function to compute the minimum cost of matrix chain multiplication (brute-force)
+int recursiveCost(const std::vector<int>& matrices, int i, int j) {
+    if (i == j) return 0;
+    int minCost = INT_MAX;
+    for (int k = i; k < j; k++) {
+        int cost = recursiveCost(matrices, i, k) + recursiveCost(matrices, k + 1, j) + matrices[i - 1] * matrices[k] * matrices[j];
+        minCost = std::min(minCost, cost);
+    }
+    return minCost;
+}
+
+void exhaustiveMatrixChain(const std::vector<int>& matrices) {
+    int n = matrices.size() - 1; // n matrices in the chain
+    int result = recursiveCost(matrices, 1, n);  // compute cost for the entire chain
+    std::cout << "Minimum number of scalar multiplications: " << result << std::endl;
+}
+
+
+// dp_matrix_chain.h
+
+
+#ifndef DP_MATRIX_CHAIN_H
+#define DP_MATRIX_CHAIN_H
+
+#include <vector>
+#include <iostream>
+
+// Function to compute the minimum scalar multiplication cost using dynamic programming
+void dpMatrixChain(const std::vector<int>& matrices);
+
+#endif
+
+
+
+// dp_matrix_chain.cpp
+
+
+#include "dp_matrix_chain.h"
+#include <climits>
+#include <vector>
+#include <iostream>
+
+using namespace std;
+
+// Function to perform Matrix Chain Multiplication using Dynamic Programming
+void dpMatrixChain(const vector<int>& matrices) {
+    int n = matrices.size() - 1;
+    vector<vector<int>> M(n, vector<int>(n, 0));  // M[i][j] will hold the minimum multiplication cost for matrices Ai...Aj
+    vector<vector<int>> S(n, vector<int>(n, 0));  // S[i][j] will hold the index of the matrix where the split occurs
+
+    // DP computation of minimum cost
+    for (int length = 2; length <= n; length++) {
+        for (int i = 0; i < n - length + 1; i++) {
+            int j = i + length - 1;
+            M[i][j] = INT_MAX;
+
+            for (int k = i; k < j; k++) {
+                int q = M[i][k] + M[k + 1][j] + matrices[i] * matrices[k + 1] * matrices[j + 1];
+                if (q < M[i][j]) {
+                    M[i][j] = q;
+                    S[i][j] = k;
+                }
+            }
+        }
+    }
+
+    cout << "Minimum number of scalar multiplications: " << M[0][n - 1] << endl;
+
+    // Display the completely filled M and S tables
+    cout << "M table (Cost of Scalar Multiplications):" << endl;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            cout << M[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    cout << "S table (Split Indices for Optimal Parenthesization):" << endl;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            cout << S[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+
+/*g++ -pg -o matrix_chain main.cpp exhaustive.cpp dp_matrix_chain.cpp
+./matrix_chain
+gprof matrix_chain gmon.out > analysis.txt
+*/
