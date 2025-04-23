@@ -1,0 +1,85 @@
+//directed 
+
+#include <bits/stdc++.h>
+using namespace std;
+
+bool dfs(int v, vector<vector<int>> &adj, vector<int> &vis, vector<int> &recStack) {
+    vis[v] = 1;
+    recStack[v] = 1;
+    for (int u : adj[v]) {
+        if (!vis[u]) {
+            if (dfs(u, adj, vis, recStack)) return true;
+        } else if (recStack[u]) {
+            return true;
+        }
+    }
+    recStack[v] = 0;
+    return false;
+}
+
+bool isCyclic(int n, vector<vector<int>> &adj) {
+    vector<int> vis(n, 0), recStack(n, 0);
+    for (int i = 0; i < n; i++) {
+        if (!vis[i] && dfs(i, adj, vis, recStack)) return true;
+    }
+    return false;
+}
+
+int main() {
+    int n = 4;
+    vector<vector<int>> adj(n);
+    adj[0].push_back(1);
+    adj[1].push_back(2);
+    adj[2].push_back(0); // cycle
+    adj[2].push_back(3);
+
+    if (isCyclic(n, adj)) cout << "Cycle Detected\n";
+    else cout << "No Cycle\n";
+}
+
+
+
+
+//undirected
+
+
+#include <bits/stdc++.h>
+using namespace std;
+
+bool dfs(int v, int parent, vector<vector<int>> &adj, vector<int> &vis) {
+    vis[v] = 1;
+    for (int u : adj[v]) {
+        if (!vis[u]) {
+            if (dfs(u, v, adj, vis)) return true;
+        } else if (u != parent) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isCyclic(int n, vector<vector<int>> &adj) {
+    vector<int> vis(n, 0);
+    for (int i = 0; i < n; i++) {
+        if (!vis[i] && dfs(i, -1, adj, vis)) return true;
+    }
+    return false;
+}
+
+int main() {
+    int n = 5;
+    vector<vector<int>> adj(n);
+    adj[0].push_back(1);
+    adj[1].push_back(0);
+    adj[1].push_back(2);
+    adj[2].push_back(1);
+    adj[2].push_back(3);
+    adj[3].push_back(2);
+    adj[3].push_back(4);
+    adj[4].push_back(3);
+
+    if (isCyclic(n, adj)) cout << "Cycle Detected\n";
+    else cout << "No Cycle\n";
+}
+
+
